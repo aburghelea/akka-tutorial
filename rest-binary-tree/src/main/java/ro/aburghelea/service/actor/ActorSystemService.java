@@ -1,9 +1,13 @@
 package ro.aburghelea.service.actor;
 
+import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
+import akka.actor.Props;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import ro.aburghelea.akka.actor.TreeNode;
+import ro.aburghelea.akka.message.InsertMessage;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -21,11 +25,18 @@ public final class ActorSystemService {
     private final Logger log = LoggerFactory.getLogger(ActorSystemService.class);
     private final static String REST_CONTROLLED_ACTOR_SYSTEM_NAME = "restControlledActorSystem";
     private ActorSystem actorSystem;
+    private ActorRef rootNode;
 
     @PostConstruct
     public void init() {
         log.info("Initiating actor system from within Spring application context");
         actorSystem = ActorSystem.create(REST_CONTROLLED_ACTOR_SYSTEM_NAME);
+        rootNode = actorSystem.actorOf(Props.create(TreeNode.class));
+        rootNode.tell(new InsertMessage(1, 5), null);
+        rootNode.tell(new InsertMessage(2, 7), null);
+        rootNode.tell(new InsertMessage(3, 4), null);
+        rootNode.tell(new InsertMessage(2, 8), null);
+
         log.info("Actor system initialized");
     }
 
