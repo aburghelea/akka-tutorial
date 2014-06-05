@@ -2,6 +2,7 @@ package ro.aburghelea.config;
 
 import static org.springframework.context.annotation.ComponentScan.Filter;
 
+import akka.actor.ActorSystem;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -11,6 +12,7 @@ import org.springframework.stereotype.Controller;
 
 import org.springframework.web.bind.annotation.RestController;
 import ro.aburghelea.Application;
+import ro.aburghelea.service.actor.ActorSystemService;
 
 @Configuration
 @ComponentScan(basePackageClasses = Application.class,
@@ -24,6 +26,10 @@ import ro.aburghelea.Application;
  * by {@link ro.aburghelea.config.WebMvcConfig}
  */
 class ApplicationConfig {
-	
+
+    @Bean()
+    ActorSystemService actorSystemService() {
+        return new ActorSystemService();
+    }
 
 }
