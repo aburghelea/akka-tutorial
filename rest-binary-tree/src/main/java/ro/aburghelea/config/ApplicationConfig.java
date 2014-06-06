@@ -25,7 +25,7 @@ import ro.aburghelea.service.actor.ActorSystemService;
  * {@link org.springframework.web.bind.annotation.RestController} classes are not scanned, because they are handled
  * by {@link ro.aburghelea.config.WebMvcConfig}
  */
-class ApplicationConfig {
+public class ApplicationConfig {
 
     @Bean()
     ActorSystemService actorSystemService() {

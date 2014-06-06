@@ -3,15 +3,23 @@ package ro.aburghelea.service.actor;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import akka.actor.Props;
+import akka.pattern.Patterns;
+import akka.util.Timeout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ro.aburghelea.akka.actor.TreeNode;
+import ro.aburghelea.akka.message.ContainsMessage;
 import ro.aburghelea.akka.message.InsertMessage;
+import ro.aburghelea.akka.message.ResponseMessage;
+import scala.concurrent.Await;
+import scala.concurrent.Future;
+import scala.concurrent.duration.FiniteDuration;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
 import javax.inject.Singleton;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -31,11 +39,8 @@ public final class ActorSystemService {
     public void init() {
         log.info("Initiating actor system from within Spring application context");
         actorSystem = ActorSystem.create(REST_CONTROLLED_ACTOR_SYSTEM_NAME);
-        rootNode = actorSystem.actorOf(Props.create(TreeNode.class));
-        rootNode.tell(new InsertMessage(1, 5), null);
-        rootNode.tell(new InsertMessage(2, 7), null);
-        rootNode.tell(new InsertMessage(3, 4), null);
-        rootNode.tell(new InsertMessage(2, 8), null);
+        rootNode = actorSystem.actorOf(Props.create(TreeNode.class, TreeNode.ROOT_NANE));
+
 
         log.info("Actor system initialized");
     }
@@ -48,4 +53,7 @@ public final class ActorSystemService {
         log.info("Actor system stopped");
     }
 
+    public ActorRef getRootNode() {
+        return rootNode;
+    }
 }
