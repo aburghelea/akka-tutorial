@@ -1,5 +1,6 @@
 package ro.aburghelea.akka.message;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,7 +15,9 @@ public abstract class Message implements Serializable {
 
     private final Logger LOG = LoggerFactory.getLogger(Message.class);
 
+    @JsonProperty
     final int id;
+    @JsonProperty
     final int value;
 
     private static final AtomicInteger counter = new AtomicInteger(1);

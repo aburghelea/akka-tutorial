@@ -4,9 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.Props;
 import akka.actor.UntypedActor;
 import akka.event.LoggingAdapter;
-import ro.aburghelea.akka.message.ContainsMessage;
-import ro.aburghelea.akka.message.InsertMessage;
-import ro.aburghelea.akka.message.ResponseMessage;
+import ro.aburghelea.akka.message.*;
 
 /**
  * @author <a href="mailto:alexandru.burghelea@endava.com">Alexandru BURGHELEA</a>
@@ -14,14 +12,12 @@ import ro.aburghelea.akka.message.ResponseMessage;
  */
 public class TreeNode extends UntypedActor {
 
+    public static final String ROOT_NANE = "root/";
     private int id;
     private int value;
     private int inserted;
     private boolean removed;
     private String name;
-
-    public static final String ROOT_NANE = "root/";
-
     private ActorRef leftChild = null;
     private ActorRef rightChild = null;
 
@@ -30,6 +26,12 @@ public class TreeNode extends UntypedActor {
         this.name = name;
     }
 
+    private void remove() {
+        inserted = 0;
+        removed = true;
+        value = 0;
+
+    }
 
     public void insert(InsertMessage message) {
         if (shouldInsertHere(message)) {
@@ -68,8 +70,48 @@ public class TreeNode extends UntypedActor {
 
     }
 
-    private LoggingAdapter getLog() {
-        return getContext().system().log();
+    private void search(ContainsMessage message) {
+        if (this.value == message.getValue()) {
+            String response = removed ? "Not available" : name;
+            getLog().info("=========>returning get response");
+            getSender().tell(new ResponseMessage(message.getValue(), name, inserted, message.getId(), response, message.getClass()), getSelf());
+        } else {
+            ActorRef receiver = message.getValue() > this.value ? rightChild : leftChild;
+            if (receiver == null) {
+                getSender().tell(new ResponseMessage(message.getValue(), null, 0, message.getId(), "Not available", message.getClass()), getSelf());
+            } else {
+                receiver.tell(message, getSender());
+            }
+        }
+    }
+
+    private void delete(DeleteMessage message) {
+        getLog().info("Delete message to " + name);
+        if (this.value == message.getValue()) {
+            remove();
+            getLog().info("Removing from " + name);
+        } else {
+            ActorRef receiver = message.getValue() > this.value ? rightChild : leftChild;
+            if (receiver != null) {
+                getLog().info("Delegating to " + receiver);
+                receiver.tell(message, getSelf());
+            }
+        }
+    }
+
+    private void cleanup(CleanupMessage message) {
+        ActorRef root = getSender();
+        if (!removed) {
+            root.tell(new InsertMessage(value), getSelf());
+        }
+
+        if (rightChild != null) {
+            rightChild.tell(message, root);
+        }
+
+        if (leftChild != null) {
+            leftChild.tell(message, root);
+        }
     }
 
     @Override
@@ -78,26 +120,18 @@ public class TreeNode extends UntypedActor {
             insert((InsertMessage) message);
         } else if (message instanceof ContainsMessage) {
             search((ContainsMessage) message);
-
-        } else {
+        } else if (message instanceof DeleteMessage) {
+            delete((DeleteMessage) message);
+        } else if (message instanceof CleanupMessage) {
+            cleanup((CleanupMessage) message);
+        }
+        else {
             unhandled(message);
         }
     }
 
-    private void search(ContainsMessage message) {
-        if (this.value == message.getValue()) {
-            String response = removed ? "Not available" : name;
-            getLog().info("=========>returning get response");
-            getSender().tell(new ResponseMessage(message.getValue(), name, message.getId(), response, message.getClass()), getSelf());
-        } else {
-            ActorRef receiver = message.getValue() > this.value ? rightChild : leftChild;
-            if (receiver == null) {
-                getSender().tell(new ResponseMessage(message.getValue(), null, message.getId(), "Not available", message.getClass()), getSelf());
-            } else {
-                receiver.tell(message, getSender());
-            }
-        }
-    }
+
+
 
     @Override
     public String toString() {
@@ -108,5 +142,9 @@ public class TreeNode extends UntypedActor {
                 ", removed=" + removed +
                 ", name='" + name + '\'' +
                 '}';
+    }
+
+    private LoggingAdapter getLog() {
+        return getContext().system().log();
     }
 }
